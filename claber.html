@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analisi Digital — Claber | Moca Interactive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --red:#E52217;--red-light:#FF5147;--red-pale:#FFE7E6;
+    --dark:#191919;--grey:#595959;--light:#F4F5F6;--white:#ffffff;
+    --green:#118541;--blue:#5781FF;--violet:#551FC4;--pink:#CE2A59;--orange:#DB5E29;
+    --radius:8px;--radius-lg:12px;
+  }
+  body{font-family:'Figtree',sans-serif;background:var(--light);color:var(--dark);font-size:14px;line-height:1.6}
+  .report-header{background:var(--dark);padding:40px 48px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+  .header-left{display:flex;flex-direction:column;gap:12px}
+  .header-badge{display:inline-flex;align-items:center;gap:6px;background:var(--red);color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:4px;width:fit-content}
+  .header-company{font-size:36px;font-weight:700;color:#fff;letter-spacing:-.5px}
+  .header-meta{display:flex;gap:24px;flex-wrap:wrap}
+  .header-meta-item{display:flex;flex-direction:column;gap:2px}
+  .header-meta-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#888}
+  .header-meta-value{font-size:13px;color:#ccc}
+  .header-logo{height:36px;opacity:.9}
+  .container{max-width:1100px;margin:0 auto;padding:0 32px}
+  .section{margin:48px 0}
+  .section-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:20px;display:flex;align-items:center;gap:8px}
+  .section-title::after{content:'';flex:1;height:1px;background:rgba(229,34,23,.2)}
+  .section-heading{font-size:22px;font-weight:700;color:var(--dark);margin-bottom:8px;letter-spacing:-.3px}
+  .section-sub{font-size:14px;color:var(--grey);margin-bottom:28px;max-width:700px}
+  .data-source{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.07em;margin-top:16px;padding-top:12px;border-top:1px solid #F0F0F0}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:32px}
+  .summary-card{background:#fff;border-radius:var(--radius-lg);padding:20px;border-left:4px solid transparent;position:relative}
+  .summary-card.green{border-left-color:var(--green)}.summary-card.orange{border-left-color:#F59E0B}.summary-card.red-c{border-left-color:var(--red)}
+  .summary-status{width:10px;height:10px;border-radius:50%;position:absolute;top:20px;right:20px}
+  .summary-status.green{background:var(--green)}.summary-status.orange{background:#F59E0B}.summary-status.red-c{background:var(--red)}
+  .summary-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--grey);margin-bottom:8px}
+  .summary-card-text{font-size:13px;color:var(--dark);line-height:1.5}
+  .metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:32px}
+  .metric-card{background:#fff;border-radius:var(--radius-lg);padding:20px;text-align:center}
+  .metric-value{font-size:28px;font-weight:700;color:var(--dark);letter-spacing:-1px}
+  .metric-value.red{color:var(--red)}.metric-value.green{color:var(--green)}
+  .metric-label{font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:.07em;margin-top:4px}
+  .metric-sub{font-size:12px;color:#999;margin-top:2px}
+  .metric-note{font-size:10px;color:#bbb;margin-top:6px;font-style:italic;line-height:1.4}
+  .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+  .chart-box{background:#fff;border-radius:var(--radius-lg);padding:24px}
+  .chart-box.full{grid-column:1/-1}
+  .chart-title{font-size:13px;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+  .chart-desc{font-size:12px;color:var(--grey);margin-bottom:20px}
+  .table-wrap{background:#fff;border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px}
+  .data-table{width:100%;border-collapse:collapse;font-size:13px}
+  .data-table th{background:var(--dark);color:#fff;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+  .data-table td{padding:9px 14px;border-bottom:1px solid #F0F0F0;color:var(--dark)}
+  .data-table tr:last-child td{border-bottom:none}
+  .data-table tr:hover td{background:#FAFAFA}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+  .badge.green{background:#DCFCE7;color:#166534}.badge.orange{background:#FEF3C7;color:#92400E}
+  .badge.red-b{background:#FEE2E2;color:#991B1B}.badge.blue{background:#DBEAFE;color:#1E40AF}.badge.grey{background:#F3F4F6;color:#374151}
+  .rank-pill{display:inline-flex;align-items:center;justify-content:center;width:28px;height:22px;border-radius:4px;font-size:11px;font-weight:700;background:var(--red-pale);color:var(--red)}
+  .rank-pill.top3{background:#DCFCE7;color:#166534}
+  .kd-bar{background:#F0F0F0;border-radius:4px;height:6px;width:100%;min-width:60px}
+  .kd-fill{height:6px;border-radius:4px}
+  .lighthouse-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+  .lh-card{background:#fff;border-radius:var(--radius-lg);padding:20px;text-align:center;position:relative;overflow:hidden}
+  .lh-score{font-size:40px;font-weight:700;letter-spacing:-2px}
+  .lh-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--grey);margin-top:4px}
+  .lh-bar{height:4px;border-radius:2px;margin-top:12px}
+  .lh-card.good .lh-score{color:var(--green)}.lh-card.good .lh-bar{background:var(--green)}
+  .lh-card.medium .lh-score{color:#F59E0B}.lh-card.medium .lh-bar{background:#F59E0B}
+  .lh-card.poor .lh-score{color:var(--red)}.lh-card.poor .lh-bar{background:var(--red)}
+  .cwv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+  .cwv-card{background:#fff;border-radius:var(--radius-lg);padding:16px}
+  .cwv-metric{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--grey)}
+  .cwv-value{font-size:22px;font-weight:700;margin:4px 0}
+  .cwv-unit{font-size:12px;color:#999;margin-left:2px}
+  .cwv-status{font-size:11px;font-weight:600;text-transform:uppercase}
+  .cwv-card.good .cwv-value,.cwv-card.good .cwv-status{color:var(--green)}
+  .cwv-card.medium .cwv-value,.cwv-card.medium .cwv-status{color:#F59E0B}
+  .cwv-card.poor .cwv-value,.cwv-card.poor .cwv-status{color:var(--red)}
+  .tracker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:24px}
+  .tracker-chip{display:flex;align-items:center;gap:8px;background:#fff;border-radius:8px;padding:10px 14px}
+  .tracker-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .tracker-dot.active{background:var(--green)}.tracker-dot.inactive{background:#D1D5DB}.tracker-dot.alert{background:var(--red)}
+  .tracker-name{font-size:12px;font-weight:600;color:var(--dark)}
+  .tracker-status{font-size:10px;color:var(--grey)}
+  .alert-box{border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start}
+  .alert-box.warning{background:#FEF3C7;border-left:4px solid #F59E0B}
+  .alert-box.danger{background:#FEE2E2;border-left:4px solid var(--red)}
+  .alert-box.info{background:#EFF6FF;border-left:4px solid var(--blue)}
+  .alert-box.success{background:#DCFCE7;border-left:4px solid var(--green)}
+  .alert-icon{font-size:16px;flex-shrink:0}
+  .alert-title{font-size:13px;font-weight:700;margin-bottom:3px}
+  .alert-text{font-size:12px;color:var(--grey);line-height:1.5}
+  .paid-limit-box{background:#FFF7ED;border:1px solid #FED7AA;border-left:4px solid #F59E0B;border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:20px;font-size:12px;color:#92400E;line-height:1.5}
+  .paid-limit-box strong{color:#78350F}
+  .ads-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:24px}
+  .ad-card{background:#fff;border-radius:var(--radius-lg);padding:20px;border:1px solid #F0F0F0}
+  .ad-card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ad-avatar{width:36px;height:36px;border-radius:8px;background:var(--dark);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ad-platform{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--grey)}
+  .ad-headline{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:6px}
+  .ad-body{font-size:12px;color:var(--grey);line-height:1.5;margin-bottom:10px}
+  .ad-cta{display:inline-block;background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:4px;text-decoration:none}
+  .ad-format{font-size:10px;color:#aaa;margin-top:8px;text-transform:uppercase;letter-spacing:.05em}
+  .moca-hero{background:var(--dark);border-radius:16px;padding:36px 40px;margin-bottom:24px;position:relative;overflow:hidden}
+  .moca-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;border-radius:50%;background:rgba(229,34,23,.08)}
+  .moca-hero-title{font-size:24px;font-weight:700;color:#fff;margin-bottom:8px}
+  .moca-hero-sub{font-size:14px;color:#888;max-width:600px}
+  .opp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+  .opp-card{background:#fff;border-radius:var(--radius-lg);padding:24px}
+  .opp-number{font-size:32px;font-weight:700;color:var(--red);opacity:.2;line-height:1;margin-bottom:8px}
+  .opp-title{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:8px}
+  .opp-problem{font-size:12px;color:var(--grey);margin-bottom:14px;line-height:1.6;font-style:italic;border-left:3px solid var(--red-pale);padding-left:10px}
+  .opp-solution{font-size:12px;color:var(--dark);line-height:1.6}
+  .opp-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+  .opp-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--red-pale);color:var(--red)}
+  .priority-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px}
+  .priority-table th{background:#191919;color:#fff;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em}
+  .priority-table td{padding:10px 14px;border-bottom:1px solid #F0F0F0;color:var(--dark)}
+  .priority-table tr:last-child td{border-bottom:none}
+  .impact-high{color:var(--red);font-weight:700}.impact-med{color:#F59E0B;font-weight:700}.impact-low{color:var(--green);font-weight:700}
+  .urgency-imm{background:#FEE2E2;color:#991B1B;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase}
+  .urgency-short{background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase}
+  .urgency-mid{background:#DCFCE7;color:#166534;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase}
+  .report-footer{background:var(--dark);padding:36px 48px;margin-top:64px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+  .footer-text{font-size:12px;color:#666;line-height:1.7}
+  .footer-cta{background:var(--red);color:#fff;font-size:13px;font-weight:700;padding:10px 24px;border-radius:6px;text-decoration:none;display:inline-block}
+  .footer-logo{height:28px;opacity:.7}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--grey)}
+  .legend-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+  .separator{border:none;border-top:1px solid #E5E7EB;margin:40px 0}
+  @media print{body{background:#fff}.report-header,.report-footer,.moca-hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}.section{page-break-inside:avoid}}
+  @media(max-width:768px){.chart-row{grid-template-columns:1fr}.opp-grid{grid-template-columns:1fr}.lighthouse-grid{grid-template-columns:repeat(2,1fr)}.cwv-grid{grid-template-columns:1fr 1fr}.report-header{flex-direction:column;align-items:flex-start;padding:28px 24px}.container{padding:0 16px}}
+</style>
+</head>
+<body>
+
+<header class="report-header">
+  <div class="header-left">
+    <span class="header-badge">Analisi Prospect — Moca Interactive</span>
+    <div class="header-company">Claber S.p.A.</div>
+    <div class="header-meta">
+      <div class="header-meta-item">
+        <span class="header-meta-label">Dominio analizzato</span>
+        <span class="header-meta-value">claber.com</span>
+      </div>
+      <div class="header-meta-item">
+        <span class="header-meta-label">Mercato</span>
+        <span class="header-meta-value">Italia</span>
+      </div>
+      <div class="header-meta-item">
+        <span class="header-meta-label">Data analisi</span>
+        <span class="header-meta-value">15 aprile 2026</span>
+      </div>
+      <div class="header-meta-item">
+        <span class="header-meta-label">A cura di</span>
+        <span class="header-meta-value">Moca Interactive</span>
+      </div>
+    </div>
+  </div>
+  <img src="https://mocainteractive.com/assets/svg/logo-light.svg" alt="Moca Interactive" class="header-logo">
+</header>
+
+<div class="container">
+
+<!-- SOMMARIO ESECUTIVO -->
+<div class="section">
+  <div class="section-title">Sommario esecutivo</div>
+  <div class="section-heading">Claber è il leader di mercato nell'irrigazione, ma la visibilità organica è in calo e il tracciamento presenta criticità GDPR</div>
+  <div class="section-sub">Claber è un'azienda italiana storica, punto di riferimento nel settore dell'irrigazione da giardino con oltre 60 anni di presenza. Il sito claber.com possiede una visibilità organica buona su keyword di settore, con campagne Google Ads attive e una presenza Meta in fase di sviluppo. Emergono tuttavia aree critiche: LCP molto elevato (5,5s), tracker che scattano prima del consenso e una Consent Mode non aggiornata alla versione 2, obbligatoria per le campagne Google Ads.</div>
+  <div class="summary-grid">
+    <div class="summary-card green">
+      <div class="summary-status green"></div>
+      <div class="summary-card-title">Posizionamento organico</div>
+      <div class="summary-card-text">247 keyword indicizzate in Italia, con 26 in posizione 1 e 45 nelle prime 3 posizioni. Forte presenza su query strategiche come "irrigazione a goccia" e "impianto irrigazione".</div>
+    </div>
+    <div class="summary-card green">
+      <div class="summary-status green"></div>
+      <div class="summary-card-title">Campagne Google Ads</div>
+      <div class="summary-card-text">Campagne attive con oltre 225.000-250.000 impression mensili stimate in Italia su Search, YouTube e Shopping. Struttura multi-formato ben consolidata.</div>
+    </div>
+    <div class="summary-card orange">
+      <div class="summary-status orange"></div>
+      <div class="summary-card-title">Performance Lighthouse</div>
+      <div class="summary-card-text">Score di performance a 65/100 con LCP critico a 5,56s (soglia ottimale: sotto 2,5s). Il peso pagina supera i 28MB, rallentando l'esperienza utente.</div>
+    </div>
+    <div class="summary-card red-c">
+      <div class="summary-status red-c"></div>
+      <div class="summary-card-title">Tracciamento e GDPR</div>
+      <div class="summary-card-text">GA4, Meta Pixel e Google Ads scattano prima del consenso utente. La Consent Mode v2, obbligatoria dal marzo 2024 per Google Ads, non risulta implementata.</div>
+    </div>
+    <div class="summary-card orange">
+      <div class="summary-status orange"></div>
+      <div class="summary-card-title">Trend traffico organico</div>
+      <div class="summary-card-text">Il traffico stimato mostra un calo progressivo da 6.428 (novembre 2025) a 5.453 (aprile 2026), con una perdita di circa il 15% in sei mesi.</div>
+    </div>
+  </div>
+</div>
+
+<hr class="separator">
+
+<!-- SEZIONE 1 — POSIZIONAMENTI ORGANICI -->
+<div class="section">
+  <div class="section-title">01 — Posizionamenti organici</div>
+  <div class="section-heading">Presenza organica solida sul settore irrigazione, con segnali di calo da monitorare</div>
+  <div class="section-sub">Claber possiede 247 keyword indicizzate su Google Italia, con una concentrazione significativa nelle prime posizioni su query di prodotto e di settore. Il traffico stimato mensile è di circa 5.453 visite, in leggero calo rispetto ai mesi precedenti. Il valore commerciale di questa visibilità organica equivale a circa 961€ mensili di traffico paid equivalente.</div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-value">247</div>
+      <div class="metric-label">Keyword totali</div>
+      <div class="metric-sub">aprile 2026</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value red">26</div>
+      <div class="metric-label">In posizione 1</div>
+      <div class="metric-sub">keyword top</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value green">45</div>
+      <div class="metric-label">Top 3</div>
+      <div class="metric-sub">pos. 1-3</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">5.453</div>
+      <div class="metric-label">Traffico stimato</div>
+      <div class="metric-sub">visite/mese</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value red">961€</div>
+      <div class="metric-label">Valore traffico org.</div>
+      <div class="metric-sub">costo equivalente paid</div>
+      <div class="metric-note">Quanto costerebbe acquistare lo stesso traffico su Google Ads, basato sui CPC medi delle keyword posizionate. Non è un ricavo, è un indicatore del valore della visibilità organica acquisita.</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">82</div>
+      <div class="metric-label">Keyword in crescita</div>
+      <div class="metric-sub">vs periodo precedente</div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-box full">
+      <div class="chart-title">Andamento traffico organico stimato</div>
+      <div class="chart-desc">Traffico mensile stimato (ETV) per claber.com, novembre 2025 - aprile 2026</div>
+      <div style="position:relative;width:100%;height:260px">
+        <canvas id="trafficChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-box full">
+      <div class="chart-title">Distribuzione keyword per posizione</div>
+      <div class="chart-desc">Numero di keyword posizionate per fascia su Google Italia</div>
+      <div style="position:relative;width:100%;height:280px">
+        <canvas id="rankDistChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:32px">Top keyword organiche per volume di ricerca</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr><th>Keyword</th><th>Posizione</th><th>Volume ricerca</th><th>Tipo</th><th>KD</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>irrigatore giardino</td><td><span class="rank-pill top3">5</span></td><td>8.100</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:15%;background:#22C55E"></div></div></td></tr>
+        <tr><td>irrigatori da giardino</td><td><span class="rank-pill top3">4</span></td><td>8.100</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:15%;background:#22C55E"></div></div></td></tr>
+        <tr><td>irrigazione giardinaggio</td><td><span class="rank-pill top3">9</span></td><td>8.100</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:5%;background:#22C55E"></div></div></td></tr>
+        <tr><td>irrigazione per giardini</td><td><span class="rank-pill top3">6</span></td><td>8.100</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:10%;background:#22C55E"></div></div></td></tr>
+        <tr><td>centralina irrigazione</td><td><span class="rank-pill">26</span></td><td>4.400</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:15%;background:#22C55E"></div></div></td></tr>
+        <tr><td>irrigazione a goccia</td><td><span class="rank-pill top3">5</span></td><td>3.600</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:10%;background:#22C55E"></div></div></td></tr>
+        <tr><td>claber</td><td><span class="rank-pill top3">1</span></td><td>3.600</td><td><span class="badge grey">Brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:5%;background:#22C55E"></div></div></td></tr>
+        <tr><td>irrigazione goccia</td><td><span class="rank-pill top3">3</span></td><td>3.600</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:10%;background:#22C55E"></div></div></td></tr>
+        <tr><td>claber irrigazione</td><td><span class="rank-pill top3">1</span></td><td>2.400</td><td><span class="badge grey">Brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:5%;background:#22C55E"></div></div></td></tr>
+        <tr><td>impianti di irrigazione da giardino</td><td><span class="rank-pill top3">9</span></td><td>2.400</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:10%;background:#22C55E"></div></div></td></tr>
+        <tr><td>impianto irrigazione giardino</td><td><span class="rank-pill top3">7</span></td><td>2.400</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:10%;background:#22C55E"></div></div></td></tr>
+        <tr><td>impianto irrigazione</td><td><span class="rank-pill top3">6</span></td><td>2.400</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:10%;background:#22C55E"></div></div></td></tr>
+        <tr><td>tubo irrigazione</td><td><span class="rank-pill top3">5</span></td><td>2.400</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:10%;background:#22C55E"></div></div></td></tr>
+        <tr><td>impianto irrigazione a goccia</td><td><span class="rank-pill top3">2</span></td><td>1.000</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:10%;background:#22C55E"></div></div></td></tr>
+        <tr><td>irrigazione a goccia fai da te</td><td><span class="rank-pill top3">3</span></td><td>720</td><td><span class="badge blue">No-brand</span></td><td><div class="kd-bar"><div class="kd-fill" style="width:8%;background:#22C55E"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert-box warning">
+    <div class="alert-icon">⚠</div>
+    <div>
+      <div class="alert-title">Calo del traffico organico nel semestre</div>
+      <div class="alert-text">Il traffico stimato è sceso da 6.428 visite (novembre 2025) a 5.453 (aprile 2026), con una riduzione di circa il 15%. Il numero di keyword indicizzate si è ridotto da 396 a 247. Le keyword "perse" (is_lost: 411) superano quelle nuove (is_new: 96), segnalando una fase di assestamento post-aggiornamento algoritmo che merita un'analisi approfondita del contenuto e dei link.</div>
+    </div>
+  </div>
+
+  <div class="data-source">Fonte dati: DataForSEO Labs · 15 aprile 2026</div>
+</div>
+
+<hr class="separator">
+
+<!-- SEZIONE 2 — BRAND VS NO-BRAND -->
+<div class="section">
+  <div class="section-title">02 — Brand vs no-brand</div>
+  <div class="section-heading">La visibilità no-brand è il vero punto di forza: Claber intercetta domanda di settore</div>
+  <div class="section-sub">Analizzando le prime 100 keyword per volume di ricerca, emerge che Claber ottiene circa il 20% di keyword branded (nome Claber, centralina Claber, Claber spa, ecc.) e circa l'80% no-brand, ovvero query generiche di settore senza citazione del brand. Questo è un segnale positivo: significa che il sito attira traffico di utenti che non cercano specificatamente Claber ma prodotti di irrigazione in generale.</div>
+
+  <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="metric-card">
+      <div class="metric-value">20%</div>
+      <div class="metric-label">Keyword branded</div>
+      <div class="metric-sub">~20 su 100 analizzate</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">80%</div>
+      <div class="metric-label">Keyword no-brand</div>
+      <div class="metric-sub">~80 su 100 analizzate</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value red">25%</div>
+      <div class="metric-label">Volume branded</div>
+      <div class="metric-sub">~7.000 ricerche/mese</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value green">75%</div>
+      <div class="metric-label">Volume no-brand</div>
+      <div class="metric-sub">~21.000 ricerche/mese</div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-box">
+      <div class="chart-title">Distribuzione keyword top 100</div>
+      <div class="chart-desc">Proporzione brand/no-brand per numero di keyword</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch" style="background:#E52217"></span>Branded (20%)</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#5781FF"></span>No-brand (80%)</span>
+      </div>
+      <div style="position:relative;width:100%;height:220px">
+        <canvas id="brandPieChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">Difficoltà keyword no-brand principali</div>
+      <div class="chart-desc">Keyword Difficulty (0-100) su query strategiche senza brand name</div>
+      <div style="position:relative;width:100%;height:220px">
+        <canvas id="kdChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert-box success">
+    <div class="alert-icon">✓</div>
+    <div>
+      <div class="alert-title">Keyword no-brand a bassa difficoltà: opportunità da consolidare</div>
+      <div class="alert-text">Le principali keyword no-brand di settore presentano un Keyword Difficulty molto basso (1-11 su 100), a conferma che il settore dell'irrigazione da giardino è ancora poco presidiato dai grandi editori generalisti. Questo rappresenta un'opportunità concreta di rafforzare il posizionamento con contenuti editoriali mirati prima che la concorrenza si intensifichi.</div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:24px">Keyword no-brand ad alta priorità</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr><th>Keyword</th><th>Pos. attuale</th><th>Volume</th><th>KD</th><th>Opportunità</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>irrigatore giardino</td><td><span class="rank-pill top3">5</span></td><td>8.100</td><td><span class="badge green">Bassa</span></td><td><span class="badge green">Scalare top 3</span></td></tr>
+        <tr><td>irrigatori da giardino</td><td><span class="rank-pill top3">4</span></td><td>8.100</td><td><span class="badge green">Bassa</span></td><td><span class="badge green">Scalare top 3</span></td></tr>
+        <tr><td>centralina irrigazione</td><td><span class="rank-pill">26</span></td><td>4.400</td><td><span class="badge green">Bassa</span></td><td><span class="badge orange">Pagina dedicata</span></td></tr>
+        <tr><td>timer irrigazione</td><td><span class="rank-pill">17</span></td><td>1.000</td><td><span class="badge green">Bassa</span></td><td><span class="badge orange">Contenuto mirato</span></td></tr>
+        <tr><td>sistema irrigazione</td><td><span class="rank-pill top3">4</span></td><td>720</td><td><span class="badge green">Bassa</span></td><td><span class="badge green">Consolidare</span></td></tr>
+        <tr><td>kit irrigazione a goccia</td><td><span class="rank-pill">12</span></td><td>720</td><td><span class="badge green">Bassa</span></td><td><span class="badge orange">Scheda prodotto ottimizzata</span></td></tr>
+        <tr><td>irrigazione automatica</td><td><span class="rank-pill">19</span></td><td>720</td><td><span class="badge green">Bassa</span></td><td><span class="badge orange">Landing dedicata</span></td></tr>
+        <tr><td>impianti irrigazione prato</td><td><span class="rank-pill top3">8</span></td><td>720</td><td><span class="badge green">Bassa</span></td><td><span class="badge green">Scalare top 5</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="data-source">Fonte dati: DataForSEO Labs (elaborazione interna) · 15 aprile 2026</div>
+</div>
+
+<hr class="separator">
+
+<!-- SEZIONE 3 — TRAFFICO ORGANICO VS PAID -->
+<div class="section">
+  <div class="section-title">03 — Traffico organico vs paid</div>
+  <div class="section-heading">Claber investe sia sull'organico sia sul paid, con una struttura multi-canale attiva</div>
+  <div class="section-sub">Claber ha campagne Google Ads attive su Search, YouTube e Shopping, con volumi significativi sul mercato italiano. Su Meta, la pagina "Claber Italia" e "Claber Ecologia" mostrano inserzioni attive su Facebook, Instagram e Audience Network. La presenza paid è strutturata, ma la mancanza di Consent Mode v2 rischia di limitare l'efficacia delle campagne Google.</div>
+
+  <div class="paid-limit-box">
+    <strong>Nota metodologica sul dato paid:</strong> il traffico paid rilevato da DataForSEO misura esclusivamente le campagne che portano traffico su <strong>claber.com</strong>. Campagne che atterrano su landing page dedicate, sottodomini o domini correlati del gruppo non sono incluse in questo conteggio. Se il volume paid appare basso rispetto all'attività reale, è probabile che parte delle campagne attive punti ad altri URL. I dati Google Ads Transparency confermano campagne attive con impression rilevanti in Italia.
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-box full">
+      <div class="chart-title">Attività Meta Ads — inserzioni attive per pagina</div>
+      <div class="chart-desc">Inserzioni attive su Facebook e Instagram — aprile 2026</div>
+      <div style="position:relative;width:100%;height:240px">
+        <canvas id="metaAdsChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert-box info">
+    <div class="alert-icon">ℹ</div>
+    <div>
+      <div class="alert-title">Struttura Meta a due pagine: Claber Italia e Claber Ecologia</div>
+      <div class="alert-text">Claber gestisce due pagine Meta distinte: "Claber Italia" per i prodotti di irrigazione standard e "Claber Ecologia" per la linea ecosostenibile. Entrambe risultano con inserzioni attive. Questa frammentazione può limitare la coerenza della comunicazione e l'ottimizzazione degli algoritmi di Meta, che beneficia di dati consolidati su un'unica pagina.</div>
+    </div>
+  </div>
+
+  <div class="data-source">Fonte dati: DataForSEO Labs · Google Ads Transparency (Apify dz_omar) · Meta Ads Library (Apify) · 15 aprile 2026</div>
+</div>
+
+<hr class="separator">
+
+<!-- SEZIONE 4 — CAMPAGNE IN CORSO -->
+<div class="section">
+  <div class="section-title">04 — Campagne in corso</div>
+  <div class="section-heading">Google Ads strutturato su Search e YouTube, Meta con creatività attive su due pagine</div>
+  <div class="section-sub">Le campagne Google Ads di Claber mostrano creatività su formato image/display attive su più paesi europei, con una concentrazione significativa sull'Italia. Su Meta, le inserzioni delle pagine ufficiali Claber sono attive dal 12 aprile 2026 su Facebook, Instagram e Audience Network.</div>
+
+  <div class="ads-grid">
+    <div class="ad-card">
+      <div class="ad-card-header">
+        <div class="ad-avatar" style="background:#191919">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        </div>
+        <div><div class="ad-platform">Google Ads · Search + YouTube + Shopping</div><div style="font-size:10px;color:#aaa">Attivo fino al 14 apr 2026</div></div>
+      </div>
+      <img src="https://tpc.googlesyndication.com/archive/simgad/7951867677520994482" style="width:100%;border-radius:6px;margin-bottom:8px;max-height:180px;object-fit:cover" alt="Claber Ad">
+      <div class="ad-body">Impressioni Italia: 225.000-250.000 · Piattaforme: Google Search (150k-175k), YouTube (40k-45k), Shopping. Campagna attiva in 14 paesi europei.</div>
+      <a href="https://adstransparency.google.com/advertiser/AR17064833638937395201/creative/CR10946405885424959489?region=anywhere" target="_blank" class="ad-cta">Vedi su Ads Transparency</a>
+      <div class="ad-format">Formato: IMAGE · ID inserzionista: AR17064833638937395201</div>
+    </div>
+
+    <div class="ad-card">
+      <div class="ad-card-header">
+        <div class="ad-avatar" style="background:#191919">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        </div>
+        <div><div class="ad-platform">Google Ads · Search + YouTube + Shopping</div><div style="font-size:10px;color:#aaa">Attivo fino al 14 apr 2026</div></div>
+      </div>
+      <img src="https://tpc.googlesyndication.com/archive/simgad/10700493958457190345" style="width:100%;border-radius:6px;margin-bottom:8px;max-height:180px;object-fit:cover" alt="Claber Ad 2">
+      <div class="ad-body">Impressioni Italia: 125.000-150.000 · Piattaforme: Google Search (60k-70k), YouTube (10k-15k). Campagna attiva in 9 paesi europei.</div>
+      <a href="https://adstransparency.google.com/advertiser/AR17064833638937395201/creative/CR00175607571917307905?region=anywhere" target="_blank" class="ad-cta">Vedi su Ads Transparency</a>
+      <div class="ad-format">Formato: TEXT/Display · ID inserzionista: AR17064833638937395201</div>
+    </div>
+
+    <div class="ad-card">
+      <div class="ad-card-header">
+        <div class="ad-avatar" style="background:#1877F2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </div>
+        <div><div class="ad-platform">Meta Ads · Facebook + Instagram + Audience Network</div><div style="font-size:10px;color:#aaa">Pagina: Claber Italia — attivo dal 12 apr 2026</div></div>
+      </div>
+      <div class="ad-headline">Claber Italia — inserzioni prodotto attive</div>
+      <div class="ad-body">Inserzioni attive su Facebook, Instagram e Audience Network dal 12 aprile 2026. La pagina "Claber Italia" gestisce campagne di prodotto su irrigazione e accessori da giardino.</div>
+      <div class="ad-cta">Scopri i prodotti</div>
+      <div class="ad-format">Formato: IMAGE/VIDEO · Pagina: Claber Italia</div>
+    </div>
+
+    <div class="ad-card">
+      <div class="ad-card-header">
+        <div class="ad-avatar" style="background:#1877F2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </div>
+        <div><div class="ad-platform">Meta Ads · Facebook + Instagram + Audience Network</div><div style="font-size:10px;color:#aaa">Pagina: Claber Ecologia — attivo dal 25 ago 2025</div></div>
+      </div>
+      <div class="ad-headline">Claber Ecologia — linea sostenibile</div>
+      <div class="ad-body">Pagina dedicata alla linea ecologica Claber, attiva con inserzioni continuative da agosto 2025 su Facebook, Instagram e Audience Network. Campagna di lungo periodo sulla brand identity sostenibile.</div>
+      <div class="ad-cta">Scopri la linea eco</div>
+      <div class="ad-format">Formato: IMAGE/VIDEO · 3 inserzioni attive rilevate</div>
+    </div>
+  </div>
+
+  <div class="alert-box warning">
+    <div class="alert-icon">⚠</div>
+    <div>
+      <div class="alert-title">Due pagine Meta attive senza coordinamento strategico evidente</div>
+      <div class="alert-text">La presenza di due pagine Meta separate (Claber Italia e Claber Ecologia) con campagne indipendenti può frammentare il budget, dividere il pubblico e ridurre l'efficacia dell'algoritmo Meta. Una strategia integrata, con segmentazione tramite campagne dedicate su un'unica pagina principale, garantirebbe maggiore ottimizzazione e coerenza del brand.</div>
+    </div>
+  </div>
+
+  <div class="data-source">Fonte dati: Google Ads Transparency (Apify dz_omar) · Meta Ads Library (Apify) · 15 aprile 2026</div>
+</div>
+
+<hr class="separator">
+
+<!-- SEZIONE 5 — USABILITÀ E ACCESSIBILITÀ -->
+<div class="section">
+  <div class="section-title">05 — Usabilità e accessibilità</div>
+  <div class="section-heading">Lighthouse Score — Homepage claber.com</div>
+  <div class="section-sub">Analisi Lighthouse v13.0.3 eseguita sulla homepage di claber.com in modalità desktop. Il sito ottiene un buon punteggio SEO tecnico (92) e accessibilità nella media (82), ma la performance è penalizzata da un LCP molto elevato e da un peso pagina eccessivo (oltre 28MB), che impatta negativamente l'esperienza utente e il ranking Google.</div>
+
+  <div class="lighthouse-grid">
+    <div class="lh-card medium">
+      <div class="lh-score">65</div>
+      <div class="lh-label">Performance</div>
+      <div class="lh-bar" style="width:65%"></div>
+    </div>
+    <div class="lh-card medium">
+      <div class="lh-score">82</div>
+      <div class="lh-label">Accessibilità</div>
+      <div class="lh-bar" style="width:82%"></div>
+    </div>
+    <div class="lh-card medium">
+      <div class="lh-score">77</div>
+      <div class="lh-label">Best Practices</div>
+      <div class="lh-bar" style="width:77%"></div>
+    </div>
+    <div class="lh-card good">
+      <div class="lh-score">92</div>
+      <div class="lh-label">SEO (tecnico)</div>
+      <div class="lh-bar" style="width:92%"></div>
+    </div>
+  </div>
+
+  <div class="section-title">Core Web Vitals rilevati</div>
+  <div class="cwv-grid">
+    <div class="cwv-card good">
+      <div class="cwv-metric">FCP — First Contentful Paint</div>
+      <div class="cwv-value">1.23<span class="cwv-unit">s</span></div>
+      <div class="cwv-status">Ottimo</div>
+    </div>
+    <div class="cwv-card poor">
+      <div class="cwv-metric">LCP — Largest Contentful Paint</div>
+      <div class="cwv-value">5.56<span class="cwv-unit">s</span></div>
+      <div class="cwv-status">Critico</div>
+    </div>
+    <div class="cwv-card good">
+      <div class="cwv-metric">CLS — Cumulative Layout Shift</div>
+      <div class="cwv-value">0.00<span class="cwv-unit"></span></div>
+      <div class="cwv-status">Ottimo</div>
+    </div>
+    <div class="cwv-card good">
+      <div class="cwv-metric">TBT — Total Blocking Time</div>
+      <div class="cwv-value">46<span class="cwv-unit">ms</span></div>
+      <div class="cwv-status">Ottimo</div>
+    </div>
+    <div class="cwv-card medium">
+      <div class="cwv-metric">TTI — Time to Interactive</div>
+      <div class="cwv-value">5.57<span class="cwv-unit">s</span></div>
+      <div class="cwv-status">Da migliorare</div>
+    </div>
+    <div class="cwv-card medium">
+      <div class="cwv-metric">Speed Index</div>
+      <div class="cwv-value">4.14<span class="cwv-unit">s</span></div>
+      <div class="cwv-status">Da migliorare</div>
+    </div>
+  </div>
+
+  <div class="alert-box danger">
+    <div class="alert-icon">⛔</div>
+    <div>
+      <div class="alert-title">LCP critico a 5,56 secondi: impatto diretto su ranking e conversioni</div>
+      <div class="alert-text">Il Largest Contentful Paint di 5,56s supera di oltre il doppio la soglia ottimale di Google (2,5s). Questo dato penalizza il sito nelle Core Web Vitals, influenzando negativamente il ranking organico. Il peso pagina di 28MB e il JavaScript inutilizzato (740KB) sono le cause principali. Un intervento di ottimizzazione immagini, lazy loading e riduzione del bundle JS è urgente.</div>
+    </div>
+  </div>
+
+  <div class="alert-box warning">
+    <div class="alert-icon">⚠</div>
+    <div>
+      <div class="alert-title">Best Practices a 77: presenza di risorse deprecate o non sicure</div>
+      <div class="alert-text">Il punteggio Best Practices (77/100) indica la presenza di alcune risorse che non rispettano le linee guida moderne di Chrome. CSS inutilizzato (380KB) e librerie JavaScript non aggiornate contribuiscono al punteggio. Un audit tecnico del codice front-end permetterebbe di identificare e correggere le problematiche in poche settimane.</div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:24px">Stack tecnologico rilevato</div>
+  <div class="tracker-grid">
+    <div class="tracker-chip"><div class="tracker-dot active"></div><div><div class="tracker-name">Google Tag Manager</div><div class="tracker-status">GTM-WQWFW25G · Attivo</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot active"></div><div><div class="tracker-name">Google Analytics 4</div><div class="tracker-status">G-YV17MQB37H · Attivo</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot active"></div><div><div class="tracker-name">Google Ads</div><div class="tracker-status">AW-954706824 · Attivo</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot active"></div><div><div class="tracker-name">Meta Pixel</div><div class="tracker-status">612562684185128 · Attivo</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot active"></div><div><div class="tracker-name">Hotjar</div><div class="tracker-status">ID 3878607 · Attivo</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot active"></div><div><div class="tracker-name">iubenda</div><div class="tracker-status">CMP · Attivo</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot active"></div><div><div class="tracker-name">livehelp.it</div><div class="tracker-status">Live chat · Attivo</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot active"></div><div><div class="tracker-name">Google CDN / Fonts</div><div class="tracker-status">CDN · Attivo</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot inactive"></div><div><div class="tracker-name">TikTok Pixel</div><div class="tracker-status">Non rilevato</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot inactive"></div><div><div class="tracker-name">LinkedIn Insight</div><div class="tracker-status">Non rilevato</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot inactive"></div><div><div class="tracker-name">GTM Server-Side</div><div class="tracker-status">Non rilevato</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot inactive"></div><div><div class="tracker-name">Microsoft Clarity</div><div class="tracker-status">Non rilevato</div></div></div>
+  </div>
+
+  <div class="data-source">Fonte dati: DataForSEO Lighthouse · 15 aprile 2026</div>
+</div>
+
+<hr class="separator">
+
+<!-- SEZIONE 6 — TRACCIAMENTO E PIXEL -->
+<div class="section">
+  <div class="section-title">06 — Tracciamento e pixel</div>
+  <div class="section-heading">Stack di tracking e conformità GDPR</div>
+  <div class="section-sub">L'analisi delle richieste di rete intercettate tramite Playwright rivela un quadro critico: tre tracker principali scattano prima del consenso dell'utente, in violazione del GDPR e delle normative italiane sul trattamento dei dati personali. Iubenda è correttamente presente come CMP, ma la Consent Mode v2 di Google non risulta implementata, compromettendo le campagne Google Ads attive.</div>
+
+  <div class="alert-box danger">
+    <div class="alert-icon">⛔</div>
+    <div>
+      <div class="alert-title">Violazione GDPR: GA4, Meta Pixel e Google Ads scattano prima del consenso</div>
+      <div class="alert-text">L'intercettazione delle richieste di rete mostra che Google Analytics 4, Meta Pixel e i tag Google Ads inviano dati al server PRIMA che l'utente abbia accettato i cookie. Questo comportamento è non conforme al GDPR e al Regolamento ePrivacy, e può esporre Claber a sanzioni da parte del Garante Privacy. Il problema è probabilmente causato da un'integrazione GTM-iubenda non configurata correttamente.</div>
+    </div>
+  </div>
+
+  <div class="alert-box danger">
+    <div class="alert-icon">⛔</div>
+    <div>
+      <div class="alert-title">Consent Mode v2 assente: impatto diretto sull'efficacia delle campagne Google</div>
+      <div class="alert-text">Dal marzo 2024 Google richiede l'implementazione della Consent Mode v2 per tutti gli inserzionisti che usano Google Ads nell'area UE. Senza Consent Mode v2 (che prevede i segnali "ad_storage" e "ad_user_data"), le campagne perdono dati di conversione significativi e la modellazione delle audience diventa meno accurata. Claber ha campagne Google Ads attive con oltre 250.000 impression mensili: questa lacuna ha un impatto economico diretto sull'efficacia delle campagne.</div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:24px">Stato tracciamento rilevato — richieste di rete</div>
+  <div class="tracker-grid">
+    <div class="tracker-chip"><div class="tracker-dot alert"></div><div><div class="tracker-name">Google Analytics 4</div><div class="tracker-status">GDPR Alert — pre-consenso</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot alert"></div><div><div class="tracker-name">Meta Pixel</div><div class="tracker-status">GDPR Alert — pre-consenso</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot alert"></div><div><div class="tracker-name">Google Ads</div><div class="tracker-status">GDPR Alert — pre-consenso</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot active"></div><div><div class="tracker-name">GTM</div><div class="tracker-status">Confermato lato rete</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot active"></div><div><div class="tracker-name">Hotjar</div><div class="tracker-status">Confermato post-consenso</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot inactive"></div><div><div class="tracker-name">GTM Server-Side</div><div class="tracker-status">Non rilevato</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot inactive"></div><div><div class="tracker-name">TikTok Pixel</div><div class="tracker-status">Non rilevato</div></div></div>
+    <div class="tracker-chip"><div class="tracker-dot inactive"></div><div><div class="tracker-name">LinkedIn Insight</div><div class="tracker-status">Non rilevato</div></div></div>
+  </div>
+
+  <div class="section-title" style="margin-top:16px">Cookie banner e Consent Mode</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Elemento</th><th>Rilevato</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Cookie banner (CMP)</td><td><span class="badge green">Sì</span></td><td>iubenda Cookie Solution attiva</td></tr>
+        <tr><td>Google Consent Mode (base)</td><td><span class="badge orange">Parziale</span></td><td>Consent Mode base rilevata nell'HTML, ma non la v2</td></tr>
+        <tr><td>Consent Mode v2 (ad_storage, ad_user_data)</td><td><span class="badge red-b">No</span></td><td>Segnali obbligatori per Google Ads EU non presenti</td></tr>
+        <tr><td>Blocco tracker pre-consenso</td><td><span class="badge red-b">No</span></td><td>GA4, Meta Pixel e Google Ads attivi prima del clic sul banner</td></tr>
+        <tr><td>Integrazione iubenda-GTM</td><td><span class="badge orange">Da verificare</span></td><td>GTM presente ma la configurazione con iubenda non blocca correttamente i tag</td></tr>
+        <tr><td>Raccolta dati cookieless / server-side</td><td><span class="badge grey">Non rilevato</span></td><td>Nessun GTM server-side rilevato nelle richieste di rete</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="data-source">Fonte dati: Apify Playwright Scraper (network intercept) · 15 aprile 2026</div>
+</div>
+
+<hr class="separator">
+
+<!-- SEZIONE 7 — COME MOCA PUÒ AIUTARE -->
+<div class="section">
+  <div class="section-title">07 — Come Moca può aiutare</div>
+  <div class="moca-hero">
+    <div style="position:relative;z-index:1">
+      <img src="https://mocainteractive.com/assets/svg/logo-light.svg" alt="Moca Interactive" style="height:32px;margin-bottom:20px">
+      <div class="moca-hero-title">Opportunità identificate e soluzioni Moca</div>
+      <div class="moca-hero-sub">Claber è un brand solido con una presenza digitale consolidata, ma con criticità tecniche e strategiche che frenano la crescita online. Il nostro team ha identificato cinque aree di intervento prioritarie che possono generare un impatto misurabile su traffico, conversioni e conformità normativa.</div>
+    </div>
+  </div>
+
+  <div class="opp-grid">
+    <div class="opp-card">
+      <div class="opp-number">01</div>
+      <div class="opp-title">Correzione urgente GDPR e Consent Mode v2</div>
+      <div class="opp-problem">GA4, Meta Pixel e Google Ads scattano prima del consenso utente. La Consent Mode v2 non è implementata: dal marzo 2024 questo comportamento compromette le campagne Google Ads con perdita di dati di conversione e rischio di sanzioni del Garante Privacy.</div>
+      <div class="opp-solution">Moca interviene sulla configurazione GTM e iubenda per garantire il corretto blocco dei tag pre-consenso. Implementiamo la Consent Mode v2 con i segnali ad_storage e ad_user_data, recuperando la piena efficacia delle campagne Google e allineando il sito alle normative vigenti.</div>
+      <div class="opp-tags"><span class="opp-tag">Data & Analytics</span><span class="opp-tag">GDPR</span><span class="opp-tag">GTM</span></div>
+    </div>
+
+    <div class="opp-card">
+      <div class="opp-number">02</div>
+      <div class="opp-title">Ottimizzazione Core Web Vitals: LCP da 5,56s a sotto 2,5s</div>
+      <div class="opp-problem">Il Largest Contentful Paint di 5,56s è più del doppio della soglia ottimale Google. Il peso pagina supera i 28MB. Questo impatta negativamente il posizionamento organico e l'esperienza utente, contribuendo al calo del traffico registrato negli ultimi sei mesi.</div>
+      <div class="opp-solution">Il nostro team tecnico conduce un audit completo delle risorse: ottimizzazione immagini in formato WebP/AVIF, implementazione lazy loading, riduzione del bundle JavaScript (740KB di JS inutilizzato), review del CSS (380KB inutilizzato) e configurazione di un CDN performante.</div>
+      <div class="opp-tags"><span class="opp-tag">Tech & Web</span><span class="opp-tag">Core Web Vitals</span><span class="opp-tag">CRO</span></div>
+    </div>
+
+    <div class="opp-card">
+      <div class="opp-number">03</div>
+      <div class="opp-title">Strategia SEO per consolidare e scalare il traffico organico</div>
+      <div class="opp-problem">Il traffico organico è calato del 15% in sei mesi (da 6.428 a 5.453 visite stimate). Le keyword perse (411) superano largamente quelle nuove (96). Keyword strategiche come "centralina irrigazione" (4.400 ricerche/mese) sono in posizione 26, ben lontano dal top 10.</div>
+      <div class="opp-solution">Moca sviluppa una strategia SEO basata su keyword research approfondita, content plan editoriale per le query di settore a bassa difficoltà, ottimizzazione on-page delle schede prodotto strategiche e un piano di link building per consolidare l'authority del dominio.</div>
+      <div class="opp-tags"><span class="opp-tag">SEO & Content</span><span class="opp-tag">Content Marketing</span><span class="opp-tag">Link Building</span></div>
+    </div>
+
+    <div class="opp-card">
+      <div class="opp-number">04</div>
+      <div class="opp-title">Ottimizzazione e razionalizzazione delle campagne Meta</div>
+      <div class="opp-problem">Claber gestisce due pagine Meta separate (Claber Italia e Claber Ecologia) con campagne indipendenti. Questa frammentazione divide il budget, disperde i dati di apprendimento dell'algoritmo Meta e rende più difficile costruire un pubblico coerente e scalabile.</div>
+      <div class="opp-solution">Moca propone una strategia Meta integrata con un account unico e campagne segmentate per linea di prodotto. Definiamo funnel chiari, creiamo creatività ad alto impatto e gestiamo le campagne con ottimizzazione continuativa, integrando i dati di conversione corretti dalla Consent Mode v2.</div>
+      <div class="opp-tags"><span class="opp-tag">Performance & Paid</span><span class="opp-tag">Meta Ads</span><span class="opp-tag">Strategy</span></div>
+    </div>
+
+    <div class="opp-card">
+      <div class="opp-number">05</div>
+      <div class="opp-title">Implementazione tracking avanzato e dashboard dati</div>
+      <div class="opp-problem">Il sito non ha GTM server-side, il che limita la qualità dei dati raccolti in un contesto cookieless sempre più diffuso. L'assenza di Microsoft Clarity e di strumenti di behavioral analytics avanzati rende difficile capire come gli utenti interagiscono con le pagine prodotto.</div>
+      <div class="opp-solution">Moca implementa un tracking avanzato con GA4 configurato correttamente, integrazione di server-side tagging via GTM, dashboard personalizzate su Looker Studio per monitorare KPI di business e, se necessario, Microsoft Clarity per heatmap e session recording che guidino le ottimizzazioni CRO.</div>
+      <div class="opp-tags"><span class="opp-tag">Data & Analytics</span><span class="opp-tag">GTM Server-Side</span><span class="opp-tag">Dashboard</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">Priorità di intervento — Piano d'azione consigliato</div>
+  <div class="table-wrap">
+    <table class="priority-table">
+      <thead>
+        <tr><th>#</th><th>Azione</th><th>Area Moca</th><th>Impatto</th><th>Urgenza</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Correzione GDPR + implementazione Consent Mode v2</td><td>Data & Analytics</td><td class="impact-high">ALTO</td><td><span class="urgency-imm">Immediata</span></td></tr>
+        <tr><td>2</td><td>Ottimizzazione LCP e Core Web Vitals (28MB → target &lt;5MB)</td><td>Tech & Web</td><td class="impact-high">ALTO</td><td><span class="urgency-imm">Immediata</span></td></tr>
+        <tr><td>3</td><td>Piano SEO: content per keyword no-brand strategiche (8.100 vol/mese)</td><td>SEO & Content</td><td class="impact-high">ALTO</td><td><span class="urgency-short">Breve termine</span></td></tr>
+        <tr><td>4</td><td>Razionalizzazione pagine Meta e strategia campagne integrata</td><td>Performance & Paid</td><td class="impact-med">MEDIO</td><td><span class="urgency-short">Breve termine</span></td></tr>
+        <tr><td>5</td><td>Implementazione GTM server-side e dashboard dati avanzata</td><td>Data & Analytics</td><td class="impact-med">MEDIO</td><td><span class="urgency-mid">Medio termine</span></td></tr>
+        <tr><td>6</td><td>Ottimizzazione schede prodotto per keyword transazionali (kit, centralina, timer)</td><td>SEO & E-commerce</td><td class="impact-med">MEDIO</td><td><span class="urgency-mid">Medio termine</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<footer class="report-footer">
+  <div>
+    <img src="https://mocainteractive.com/assets/svg/logo-light.svg" alt="Moca Interactive" class="footer-logo" style="margin-bottom:12px;display:block">
+    <div class="footer-text">
+      Moca Interactive S.r.l. — Via Fonderia, 93, 31100 Treviso<br>
+      Sedi operative: Treviso e Milano<br>
+      contact@mocainteractive.com — +39 0422 421171 — mocainteractive.com
+    </div>
+  </div>
+  <a href="mailto:contact@mocainteractive.com" class="footer-cta">Contattaci per un incontro</a>
+</footer>
+
+<script>
+// CHART 1: TRAFFICO ORGANICO
+new Chart(document.getElementById('trafficChart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: ['Nov 25','Dic 25','Gen 26','Feb 26','Mar 26','Apr 26'],
+    datasets: [{
+      label: 'Traffico organico stimato',
+      data: [6428, 6074, 6043, 5804, 5646, 5453],
+      borderColor: '#E52217', backgroundColor: 'rgba(229,34,23,0.06)',
+      borderWidth: 2.5, pointBackgroundColor: '#E52217', pointRadius: 5,
+      fill: true, tension: 0.3
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: false, ticks: { callback: v => v.toLocaleString('it'), font: { size: 11 } }, grid: { color: '#F0F0F0' } },
+      x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+    }
+  }
+});
+
+// CHART 2: DISTRIBUZIONE POSIZIONI
+new Chart(document.getElementById('rankDistChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['Pos 1','Pos 2-3','Pos 4-10','Pos 11-20','Pos 21-30','Pos 31-40','Pos 41-50','Pos 51-60','Pos 61-70','Pos 71-80','Pos 81-90','Pos 91-100'],
+    datasets: [{
+      label: 'Keyword',
+      data: [26, 19, 84, 34, 25, 15, 19, 11, 7, 4, 1, 2],
+      backgroundColor: ['#118541','#118541','#5781FF','#5781FF','#F59E0B','#F59E0B','#E52217','#E52217','#E52217','#E52217','#E52217','#E52217'],
+      borderRadius: 4, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { ticks: { font: { size: 11 } }, grid: { color: '#F0F0F0' } },
+      x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+    }
+  }
+});
+
+// CHART 3: BRAND PIE
+new Chart(document.getElementById('brandPieChart').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Branded', 'No-brand'],
+    datasets: [{ data: [20, 80], backgroundColor: ['#E52217','#5781FF'], borderWidth: 0, hoverOffset: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 16 } } },
+    cutout: '65%'
+  }
+});
+
+// CHART 4: KEYWORD DIFFICULTY
+new Chart(document.getElementById('kdChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['sistemi irrigazione','irrigazione giardinaggio','irrigatore giardino','irrigatori giardino','impianto irrigazione','centralina irrigazione','timer irrigazione','kit irrigazione goccia'],
+    datasets: [{
+      label: 'Keyword Difficulty',
+      data: [11, 1, 8, 8, 10, 8, 5, 7],
+      backgroundColor: [11,1,8,8,10,8,5,7].map(v => v >= 60 ? '#E52217' : v >= 30 ? '#F59E0B' : '#118541'),
+      borderRadius: 4
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { min: 0, max: 100, ticks: { font: { size: 10 } }, grid: { color: '#F0F0F0' } },
+      y: { ticks: { font: { size: 10 } }, grid: { display: false } }
+    }
+  }
+});
+
+// CHART 5: META ADS
+new Chart(document.getElementById('metaAdsChart').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Claber Italia','Claber Ecologia','Rivenditori (Tirrigo, ecc.)'],
+    datasets: [{ data: [6, 4, 10], backgroundColor: ['#1877F2','#118541','#E52217'], borderWidth: 0, hoverOffset: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } },
+    cutout: '55%'
+  }
+});
+</script>
+
+</body>
+</html>
